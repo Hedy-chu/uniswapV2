@@ -12,6 +12,7 @@ import {IUniswapV2Factory} from "../src/interfaces/IUniswapV2Factory.sol";
 import {WETH9} from "../src/WETH9.sol";
 import "forge-std/mocks/MockERC20.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
 contract UniswapV2Test is Test {
     UniswapV2Factory public factory;
@@ -98,6 +99,10 @@ contract UniswapV2Test is Test {
         vm.stopPrank();
     }
 
+    /**
+     * 测试用weth买nft
+     * 如果是平台币，就是有token => 平台币直接兑换，没有token => weth => 平台币直接兑换
+     */
     function testByNft() public {
         deal(address(token0), alice, 200 ether);
         deal(address(token1), alice, 200 ether);
@@ -147,13 +152,18 @@ contract UniswapV2Test is Test {
             token0.approve(address(router), 100 ether);
             // token1.approve(address(router), 100 ether);
             token0.approve(address(nftMarket), 10 ether);
+            // 确实购买的代币
+            // 如果不是官方指定代币（目前是weth），看有没有 用户代币=> weth
+            // 有路径 直接获得token => weth
+            // 没有路径 结束,没有流动性
             // 获得储备金
             (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast) = IUniswapV2Pair(pair).getReserves();
             // 获得输入的金额
             uint amountIn = router.getAmountIn(nftMarket.listPrice(0), reserve0, reserve1);
+            // 设置最大能接受的amountIn ： amountInMax ，作为参数传入buy
             console.log("amountIn:", amountIn);
             // 购买
-            nftMarket.buyNft(0, amountIn, address(token0));
+            nftMarket.buyNft(0, amountIn, Math.tryMul(amountIn, 1.2), Inaddress(token0));
             assertEq(nftMarket.onSale(0), false);
             assertEq(nft.ownerOf(0), address(admin));
         }
