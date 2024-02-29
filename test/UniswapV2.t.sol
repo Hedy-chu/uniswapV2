@@ -163,7 +163,7 @@ contract UniswapV2Test is Test {
             // 设置最大能接受的amountIn ： amountInMax ，作为参数传入buy
             console.log("amountIn:", amountIn);
             // 购买
-            nftMarket.buyNft(0, amountIn, Math.tryMul(amountIn, 1.2), Inaddress(token0));
+            nftMarket.buyNft(0, amountIn, amountIn * 12 /10 ,address(token0));
             assertEq(nftMarket.onSale(0), false);
             assertEq(nft.ownerOf(0), address(admin));
         }

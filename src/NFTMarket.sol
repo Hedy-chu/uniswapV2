@@ -52,7 +52,7 @@ contract NFTMarket is Ownable, IERC721Receiver, EIP712, Nonces {
     mapping(uint => address) public nftOwner; // tokenId => address
     address[] path;
     uint public feeRate; // 购买手续费
-    uint public totalFee; //总共收取的手续费
+    uint public totalFee; // 总共收取的手续费
     uint public totalStake; //总存款  
     uint public constant DIVIEND = 1000;
     uint public stakeRateOneBlock; // 一个区块的存款利率
@@ -128,7 +128,6 @@ contract NFTMarket is Ownable, IERC721Receiver, EIP712, Nonces {
             entity.lastUpdateBlockNumber = block.number;
             stakeMap[msg.sender] = entity;
 
-
         }else{
             // 没有质押过
             stakeMap[msg.sender] = stakeEntity(msg.sender, wEthAmount, currentStakeInterest, block.number, block.timestamp);
@@ -136,6 +135,7 @@ contract NFTMarket is Ownable, IERC721Receiver, EIP712, Nonces {
         } 
         // 质押
         IERC20(address(weth)).transferFrom(msg.sender, address(this), wEthAmount);
+        totalStake += wEthAmount;
         // 铸造cToken
         ICETH(ceth).mint(msg.sender, wEthAmount);
 
