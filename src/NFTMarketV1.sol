@@ -9,12 +9,12 @@ import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/Nonces.sol";
 import "../src/interfaces/IUniswapV2Router02.sol";
 import "./WETH9.sol";
-import "./CETH.sol";
 import "openzeppelin-contracts/contracts/utils/math/Math.sol";
 import {Test, console} from "forge-std/Test.sol";
 
 /**
  * @title NftMarket，token购买，收手续费，质押eth获得token
+ * 通过预言机获取到eth -> token的价格，
  */
 interface IMyERC721 {
     function safeTransferFrom(

@@ -44,7 +44,7 @@ contract UniswapV2Test is Test {
             nft = new MyERC721();
             nftMarket = new NFTMarket(
                 address(nft),
-                weth,
+                address(weth),
                 address(router)
             );
         }

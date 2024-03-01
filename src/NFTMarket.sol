@@ -9,9 +9,11 @@ import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/Nonces.sol";
 import "../src/interfaces/IUniswapV2Router02.sol";
 import "./WETH9.sol";
-import "./CETH.sol";
 import "openzeppelin-contracts/contracts/utils/math/Math.sol";
 import {Test, console} from "forge-std/Test.sol";
+// 预言机的包
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
 
 /**
  * @title NftMarket，实现上线、购买nft、拥有白名单购买、离线上线
@@ -45,13 +47,17 @@ contract NFTMarket is Ownable, IERC721Receiver, EIP712, Nonces {
     mapping(uint => bool) public onSale;
     mapping(uint => address) public nftOwner; // tokenId => address
     address[] path;
+
+    // 预言机
+    AggregatorV3Interface internal dataFeed;
+
    
     error notOnSale();
     error hasBeBuyError();
     error priceError();
     error onSaled();
     event listToken(address user, uint256 tokenId, uint256 price);
-    event buy(address user, uint256 tokenId, uint256 amount);
+    event buy(address user, uint256 tokenId, uint256 amount, uint256 uPrice);
 
     constructor(
         address nftAddr,
@@ -61,6 +67,9 @@ contract NFTMarket is Ownable, IERC721Receiver, EIP712, Nonces {
         nft = IMyERC721(nftAddr);
         weth = _weth;
         router = routerAddr;
+        dataFeed = AggregatorV3Interface(
+            0x694AA1769357215DE4FAC081bf1f309aDC325306
+        );
     }
 
     modifier checkPrice(uint price) {
@@ -110,6 +119,15 @@ contract NFTMarket is Ownable, IERC721Receiver, EIP712, Nonces {
         if (!onSale[tokenId]) {
             revert notOnSale();
         }
+
+        // 获取ETH对usdt价格
+        (
+        /* uint80 roundID */,
+        int answer,
+        /*uint startedAt*/,
+        /*uint timeStamp*/,
+        /*uint80 answeredInRound*/
+        ) = dataFeed.latestRoundData();
         if (coin != weth) {
             console.log("exchange");
             // 交换代币到指定token,这里需要调用exchange的swap方法
@@ -156,9 +174,10 @@ contract NFTMarket is Ownable, IERC721Receiver, EIP712, Nonces {
                 nftOwner[tokenId],
                 amount
             );
+        uint uPrice = uint(answer) * amount;
 
         nft.safeTransferFrom(address(this), msg.sender, tokenId);
         onSale[tokenId] = false;
-        emit buy(msg.sender, tokenId, amount);
+        emit buy(msg.sender, tokenId, amount, uPrice);
     }
 }
