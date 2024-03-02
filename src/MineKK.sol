@@ -12,6 +12,7 @@ contract MineKK {
     address public weth;
     uint public immutable perReward;
     using SafeERC20 for IERC20;
+    uint public totalStake;
 
     struct stakeEntity {
         uint256 stakeAmount;
@@ -34,26 +35,30 @@ contract MineKK {
         uint earn = pendingEarn(entity);
         // 更新质押信息
         updateEntity(entity, wethAmount, earn, true);
+        // 更新总质押
+        totalStake += wethAmount;
 
         IERC20(weth).safeTransferFrom(msg.sender, address(this), wethAmount);
     }
 
-    function unstake(uint wethAmount,bool isAll) public {
+    function unStake(uint wethAmount,bool isAll) public {
         require(wethAmount > 0, "amount must be greater than 0");
 
         stakeEntity memory entity = stakeMap[msg.sender];
         require(entity.stakeAmount >= wethAmount, "amount must be less than or equal to stakeAmount");
-        uint unstakeAmount = isAll ? entity.stakeAmount : wethAmount;
+        uint unStakeAmount = isAll ? entity.stakeAmount : wethAmount;
         // 更新收益
         uint earn = pendingEarn(entity);
         // 更新质押信息
-        updateEntity(entity, unstakeAmount, earn, false);
+        updateEntity(entity, unStakeAmount, earn, false);
+        // 更新总质押
+        totalStake += wethAmount;
 
         IERC20(weth).safeTransfer(msg.sender, wethAmount);
     }
 
     function claimReward(address user, uint amount) public {
-         require(amount > 0, "amount must bigger than zero");
+        require(amount > 0, "amount must bigger than zero");
         stakeEntity memory entity = stakeMap[user];
         require(entity.reward >= amount, "not enough reward");
         entity.reward -= amount;
@@ -67,7 +72,7 @@ contract MineKK {
     ) public view returns (uint reward) {
         if (entity.stakeAmount == 0) return 0;
         uint blockNum = block.number;
-        reward = (blockNum - entity.stakeBlock) * 100;
+        reward = (blockNum - entity.stakeBlock) * entity.stakeAmount / totalStake * perReward;
     }
 
     function updateEntity(

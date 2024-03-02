@@ -180,4 +180,9 @@ contract NFTMarket is Ownable, IERC721Receiver, EIP712, Nonces {
         onSale[tokenId] = false;
         emit buy(msg.sender, tokenId, amount, uPrice);
     }
+
+    // 接收eth
+    receive() external payable {
+    
+    } 
 }

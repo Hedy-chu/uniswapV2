@@ -50,8 +50,9 @@ contract NFTMarket is Ownable, IERC721Receiver, EIP712, Nonces {
     uint public totalStake; //总存款
     uint public constant DIVIEND = 1000;
     // uint public stakeRateOneBlock; // 一个区块的存款利率
-    uint public accrualBlockNumber; // 上次计息快高
+    // uint public accrualBlockNumber; // 上次计息快高
     uint public currentStakeInterest; // 当前利率
+    uint public constant MANTISSA = 1e18; 
 
     struct stakeEntity {
         uint amount; // 存款金额
@@ -161,18 +162,12 @@ contract NFTMarket is Ownable, IERC721Receiver, EIP712, Nonces {
      * 更新累计利率
      */
     function changeInterest(uint fee) internal {
-        uint currentBlockNumber = block.number; //获取当前区块高度
-        //如果上次计息时也在相同区块，则不重复计息。
-        if (accrualBlockNumber == currentBlockNumber) {
-            return;
-        }
+       
         // percharge = 当前收取的fee/ 总存款
-        uint rate = fee / totalStake;
+        uint rate = fee * MANTISSA / totalStake;
         // 计算当前的累积利率
         currentStakeInterest = currentStakeInterest + rate;
 
-        // 更新计息时间
-        accrualBlockNumber = currentBlockNumber;
     }
 
     function computeEarn(
@@ -181,7 +176,7 @@ contract NFTMarket is Ownable, IERC721Receiver, EIP712, Nonces {
         if (entity.amount == 0) {
             return 0;
         }
-        earn = entity.amount * (currentStakeInterest - entity.stakeInterest);
+        earn = entity.amount * (currentStakeInterest - entity.stakeInterest) / MANTISSA;
     }
 
     function updateEntity(
@@ -293,4 +288,9 @@ contract NFTMarket is Ownable, IERC721Receiver, EIP712, Nonces {
         onSale[tokenId] = false;
         emit buy(msg.sender, tokenId, amount, fee);
     }
+
+    // 接收eth
+    receive() external payable {
+
+    } 
 }

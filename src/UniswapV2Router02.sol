@@ -232,6 +232,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         console.log("swapExactTokensForTokens");
         amounts = UniswapV2Library.getAmountsOut(factory, amountIn, path);
         require(amounts[amounts.length - 1] >= amountOutMin, 'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
+        console.log("path[0]",path[0]);
         TransferHelper.safeTransferFrom(
             path[0], msg.sender, UniswapV2Library.pairFor(factory, path[0], path[1]), amounts[0]
         );
