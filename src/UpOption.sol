@@ -12,11 +12,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  */
 contract UpOption is Ownable, ERC20 {
     using SafeERC20 for IERC20;
-    address public buyToken;
-    uint public optionPrice;
+    address public buyToken; // 购买的代币 ：KK
+    uint public optionPrice; // 每张期权价格 
     uint public strikePrice; // 行权价格
-    uint public expiryDate;
-    uint public constant issueMin = 1 ether;
+    uint public expiryDate; // 执行日期
+    uint public constant issueMin = 1 ether;  // 最小标的数量
 
     constructor(
         address _buyToken,
@@ -52,7 +52,7 @@ contract UpOption is Ownable, ERC20 {
         );
         require(block.timestamp < expiryDate, "Option expired");
         require(
-            kkAmount >= optionAmount * optionPrice / 1 ether,
+            kkAmount >= optionAmount * optionPrice / issueMin,
             "Incorrect option price"
         );
         IERC20(buyToken).safeTransferFrom(msg.sender, address(this), kkAmount);
@@ -76,13 +76,13 @@ contract UpOption is Ownable, ERC20 {
             "Insufficient option amount"
         );
         require(
-            IERC20(buyToken).balanceOf(msg.sender) >= optionAmount * amount/ 1 ether,
+            IERC20(buyToken).balanceOf(msg.sender) >= optionAmount * amount/ issueMin,
             "Insufficient buy token balance"
         );
         IERC20(buyToken).safeTransferFrom(
             msg.sender,
             owner(),
-            optionAmount * amount/ 1 ether
+            optionAmount * amount/ issueMin
         );
         _burn(msg.sender, optionAmount);
 
