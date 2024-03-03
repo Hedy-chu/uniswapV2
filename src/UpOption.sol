@@ -16,16 +16,18 @@ contract UpOption is Ownable, ERC20 {
     uint public optionPrice;
     uint public strikePrice; // 行权价格
     uint public expiryDate;
-    uint public issueMin;
+    uint public constant issueMin = 1 ether;
 
     constructor(
         address _buyToken,
         uint _optionPrice,
-        uint _expiryDate
+        uint _expiryDate,
+        uint _strikePrice
     ) ERC20("UpOption", "UP") Ownable(msg.sender) {
         buyToken = _buyToken;
         optionPrice = _optionPrice;
         expiryDate = _expiryDate;
+        strikePrice = _strikePrice;
     }
 
     /**
@@ -45,12 +47,12 @@ contract UpOption is Ownable, ERC20 {
      */
     function buyOption(uint optionAmount, uint kkAmount) public {
         require(
-            optionAmount <= balanceOf(msg.sender),
+            optionAmount <= balanceOf(owner()),
             "Insufficient option amount"
         );
         require(block.timestamp < expiryDate, "Option expired");
         require(
-            kkAmount >= optionAmount * optionPrice,
+            kkAmount >= optionAmount * optionPrice / 1 ether,
             "Incorrect option price"
         );
         IERC20(buyToken).safeTransferFrom(msg.sender, address(this), kkAmount);
@@ -74,13 +76,13 @@ contract UpOption is Ownable, ERC20 {
             "Insufficient option amount"
         );
         require(
-            IERC20(buyToken).balanceOf(address(this)) >= optionAmount * amount,
+            IERC20(buyToken).balanceOf(msg.sender) >= optionAmount * amount/ 1 ether,
             "Insufficient buy token balance"
         );
         IERC20(buyToken).safeTransferFrom(
             msg.sender,
             owner(),
-            optionAmount * amount
+            optionAmount * amount/ 1 ether
         );
         _burn(msg.sender, optionAmount);
 
