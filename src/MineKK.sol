@@ -10,49 +10,56 @@ interface IKK {
 contract MineKK {
     address public kkAddress;
     address public weth;
-    uint public immutable perReward;
+    uint public constant PERWARD = 10; // 每个区块收益
     using SafeERC20 for IERC20;
-    uint public totalStake;
+    uint public totalStake; // 总抵押量
+    uint public currentStakeInterest; // 当前利率 初始值 = 0
 
     struct stakeEntity {
         uint256 stakeAmount;
         uint256 reward;
         uint256 stakeBlock;
+        uint stakeInterest; // 上一次存款/赎回时的利率
     }
     mapping(address => stakeEntity) stakeMap;
 
-    constructor(address _kkAddress, address _weth, uint _perReward) {
+    constructor(address _kkAddress, address _weth) {
         kkAddress = _kkAddress;
         weth = _weth;
-        perReward = _perReward;
     }
 
     function stake(uint wethAmount) public {
         require(wethAmount > 0, "amount must be greater than 0");
-
+    
         stakeEntity memory entity = stakeMap[msg.sender];
         // 更新收益
         uint earn = pendingEarn(entity);
-        // 更新质押信息
-        updateEntity(entity, wethAmount, earn, true);
         // 更新总质押
         totalStake += wethAmount;
+        changeInterest();
+        // 更新质押信息
+        updateEntity(entity, wethAmount, earn, true);
 
         IERC20(weth).safeTransferFrom(msg.sender, address(this), wethAmount);
     }
 
-    function unStake(uint wethAmount,bool isAll) public {
+    function unStake(uint wethAmount, bool isAll) public {
         require(wethAmount > 0, "amount must be greater than 0");
 
         stakeEntity memory entity = stakeMap[msg.sender];
-        require(entity.stakeAmount >= wethAmount, "amount must be less than or equal to stakeAmount");
+        require(
+            entity.stakeAmount >= wethAmount,
+            "amount must be less than or equal to stakeAmount"
+        );
         uint unStakeAmount = isAll ? entity.stakeAmount : wethAmount;
         // 更新收益
         uint earn = pendingEarn(entity);
-        // 更新质押信息
-        updateEntity(entity, unStakeAmount, earn, false);
         // 更新总质押
         totalStake += wethAmount;
+        // 更新总份数额
+        changeInterest();
+        // 更新质押信息
+        updateEntity(entity, unStakeAmount, earn, false);
 
         IERC20(weth).safeTransfer(msg.sender, wethAmount);
     }
@@ -72,7 +79,20 @@ contract MineKK {
     ) public view returns (uint reward) {
         if (entity.stakeAmount == 0) return 0;
         uint blockNum = block.number;
-        reward = (blockNum - entity.stakeBlock) * entity.stakeAmount / totalStake * perReward;
+        reward =
+            (blockNum - entity.stakeBlock) *
+            entity.stakeAmount *
+            (currentStakeInterest - entity.stakeInterest);
+    }
+
+    /**
+     * 更新累计利率
+     */
+    function changeInterest() internal {
+        // percharge = 当前收取的fee/ 总存款
+        uint rate = PERWARD / totalStake;
+        // 计算当前的累积利率
+        currentStakeInterest = currentStakeInterest + rate;
     }
 
     function updateEntity(
@@ -86,6 +106,7 @@ contract MineKK {
             : entity.stakeAmount -= wethAmount;
         entity.reward += earn;
         entity.stakeBlock = block.number;
+        entity.stakeInterest = currentStakeInterest;
         stakeMap[msg.sender] = entity;
     }
 }

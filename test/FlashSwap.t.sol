@@ -148,24 +148,10 @@ contract FlashSwapTest is Test {
                 block.timestamp
             );
 
-            // flashSwap.flash();
-            console.log("Flash swap started");
-        
-            pairA = IUniswapV2Factory(factoryA).getPair(
-                    address(token0),
-                    address(token1)
-                );
-            address test = IUniswapV2Pair(pairA).token0();
+            flashSwap.flash();
             
-            console.log("pairA",pairA);
-            console.log("test",test);
-
-            IUniswapV2Pair(pairA).swap(
-                0,
-                1e8 wei,
-                address(flashSwap),
-                abi.encode(address(token1), 1e8 wei)
-            );
+        
+            
         }
         
         vm.stopPrank();

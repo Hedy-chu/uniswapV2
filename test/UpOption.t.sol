@@ -35,6 +35,7 @@ contract UpOptionTest is Test {
             upOption.issueOptions{value:1 ether}();
             upOption.approve(address(upOption),upOption.balanceOf(admin));
             assertEq(upOption.balanceOf(admin),1 ether);
+            console.log("issue 1 ether Option");
         }
         vm.stopPrank();
 
@@ -46,12 +47,15 @@ contract UpOptionTest is Test {
             upOption.buyOption(0.5 ether, upOption.optionPrice());
             assertEq(upOption.balanceOf(alice),0.5 ether);
 
+            console.log("buy 0.5 ether Option");
+
             // 执行期权
             vm.warp(2000);
             kkToken.approve(address(upOption),4000 ether);
             upOption.exerciseOption(upOption.strikePrice(),upOption.balanceOf(alice));
             uint ethbalance = address(alice).balance;
             assertEq(ethbalance ,0.5 ether);
+            console.log("exercise 0.5 ether Option");
         }
         vm.stopPrank();
 
@@ -59,7 +63,7 @@ contract UpOptionTest is Test {
         {
             vm.warp(2000);
             upOption.burnOptions();
-            console.log("111:  ",address(admin).balance);
+            console.log("burn  Option");
         }
         vm.stopPrank();
 
